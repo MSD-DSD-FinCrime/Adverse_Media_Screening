@@ -77,14 +77,23 @@ if uploaded_file:
                     search_path = tmp_search.name
 
                 st.markdown(
-                    f"<div style='color: white; font-size: 1.1rem; padding: 10px 0;'>✅ {article_count} articles found. Now screening content with LLM...</div>",
+                    "<div style='color:white; font-size:1rem; padding:10px 0;'>⏱️ This may take a few minutes. Articles are being analyzed using AI...</div>",
                     unsafe_allow_html=True
                 )
 
+                progress_bar = st.progress(0, text="🔍 Screening articles...")
+
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_screened:
                     screened_path = tmp_screened.name
-                    with st.spinner("🤖 Analyzing article content using LLM..."):
-                        df_screened = process_articles(search_path, output_path=screened_path)
+
+                    df_screened = process_articles(
+                        file_path=search_path,
+                        output_path=screened_path,
+                        progress_callback=lambda i, total: progress_bar.progress(
+                            i / total,
+                            text=f"🔍 Screening article {i} of {total}..."
+                        )
+                    )
 
                 st.markdown("<h4>✅ Final Screening Results:</h4>", unsafe_allow_html=True)
                 st.dataframe(df_screened, use_container_width=True)
@@ -110,7 +119,6 @@ if uploaded_file:
                 """
                 st.markdown(summary_html, unsafe_allow_html=True)
 
-                # Chart
                 chart_data = df_screened["Classification"].value_counts().reset_index()
                 chart_data.columns = ["Classification", "Count"]
                 chart = alt.Chart(chart_data).mark_bar().encode(

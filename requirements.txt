@@ -7,3 +7,4 @@ altair
 langchain
 langchain-community
 langchain-groq
+beautifulsoup4     # 👈 Add this line

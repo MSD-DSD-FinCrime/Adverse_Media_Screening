@@ -87,3 +87,7 @@ def run_search(entity_list: list) -> pd.DataFrame:
     else:
         return pd.DataFrame()
 
+if df_search_result.empty:
+    st.warning("⚠️ No articles found.")
+    st.text(f"Entities searched: {entities}")
+    st.text("Check app.log for more details.")

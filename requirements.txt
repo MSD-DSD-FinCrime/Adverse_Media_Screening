@@ -1,0 +1,9 @@
+streamlit
+pandas
+openpyxl
+requests
+python-dateutil
+altair
+langchain
+langchain-community
+langchain-groq

@@ -2,10 +2,10 @@ import pandas as pd
 import time
 import json
 import re
+import streamlit as st
 
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import WebBaseLoader
-import streamlit as st
 
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 llm = ChatGroq(model="llama3-8b-8192", api_key=GROQ_API_KEY)
@@ -36,7 +36,8 @@ def extract_article_text(url):
         docs = loader.load()
         return docs[0].page_content if docs else ""
     except Exception as e:
-        return ""  # Suppressed error from UI
+        st.warning(f"❌ Failed to load {url}: {e}")
+        return ""
 
 def safe_parse_json(response_content, link):
     try:
@@ -47,23 +48,22 @@ def safe_parse_json(response_content, link):
         if match:
             return json.loads(match.group())
         raise ValueError("No valid JSON found")
-    except Exception:
+    except Exception as e:
+        st.warning(f"⚠️ JSON parsing failed for {link}: {e}")
         return None
 
-def process_articles(file_path, output_path="screened_results.xlsx", progress_callback=None):
+def process_articles(file_path, output_path="screened_results.xlsx"):
     df = pd.read_excel(file_path)
     output_rows = []
-    total = len(df)
 
-    for i, row in enumerate(df.itertuples(), start=1):
-        entity, link = row.Entity, row.Link
+    for index, row in df.iterrows():
+        entity, link = row.get("Entity"), row.get("Link")
         if not entity or not link:
             continue
-
+        st.write(f"🔍 Processing: {entity} - {link}")
         text = extract_article_text(link)
         if not text.strip():
             continue
-
         prompt = build_prompt(entity, text[:6000])
         try:
             result = llm.invoke(prompt)
@@ -76,12 +76,8 @@ def process_articles(file_path, output_path="screened_results.xlsx", progress_ca
                     "Classification": "Negative" if parsed.get("IsNegative") else "False Hit",
                     "Reason": parsed.get("Reason", "")
                 })
-        except Exception:
-            pass
-
-        if progress_callback:
-            progress_callback(i, total)
-
+        except Exception as e:
+            st.error(f"LLM Error: {e}")
         time.sleep(1.5)
 
     if output_rows:

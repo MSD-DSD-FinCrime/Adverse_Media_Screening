@@ -59,27 +59,31 @@ def run_search(entity_list: list) -> pd.DataFrame:
         for keyword in NEGATIVE_KEYWORDS:
             results = search_entity(entity, keyword)
             if results:
-                entity_results.extend(results[:3])
+                entity_results.extend(results[:3])  # Max 3 per keyword
 
         if not entity_results:
             continue
 
         df_entity = pd.DataFrame(entity_results)
 
+        # Ensure PublishDate is in datetime format
         df_entity["PublishDate"] = pd.to_datetime(df_entity.get("PublishDate"), errors='coerce')
 
-        dated_articles = df_entity.dropna(subset=["PublishDate"]).copy()
-        undated_articles = df_entity[df_entity["PublishDate"].isna()].copy()
+        # Split dated and undated
+        dated = df_entity.dropna(subset=["PublishDate"]).copy()
+        undated = df_entity[df_entity["PublishDate"].isna()].copy()
 
-        dated_articles = dated_articles.sort_values(by="PublishDate", ascending=False)
-        dated_articles["PublishDate"] = dated_articles["PublishDate"].apply(lambda x: x.replace(tzinfo=None))
+        # Sort dated by newest first
+        dated = dated.sort_values(by="PublishDate", ascending=False)
+        dated["PublishDate"] = dated["PublishDate"].apply(lambda x: x.replace(tzinfo=None))
 
-        combined = pd.concat([dated_articles, undated_articles], ignore_index=True).head(10)
+        # Prioritize dated articles, then undated, limit to top 5
+        combined = pd.concat([dated, undated], ignore_index=True).head(5)
 
         all_entity_results.append(combined)
 
     if all_entity_results:
-        final_df = pd.concat(all_entity_results, ignore_index=True)
-        return final_df
+        return pd.concat(all_entity_results, ignore_index=True)
     else:
         return pd.DataFrame()
+

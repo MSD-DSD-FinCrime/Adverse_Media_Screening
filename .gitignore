@@ -1,0 +1,22 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.env.*
+.DS_Store
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore Streamlit specific
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# Ignore Jupyter/IPython
+.ipynb_checkpoints/
+
+# Ignore FAISS index (optional, if not saving to disk)
+*.faiss
+*.json
+*.db
